@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منصة التحديات البرمجية ولائحة الشرف</title>
+    <title>منصة التحديات البرمجية</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.39.0/min/vs/loader.min.js"></script>
 </head>
@@ -12,7 +12,7 @@
     <div id="auth-overlay" class="fixed inset-0 bg-slate-950/95 flex justify-center items-center z-50 transition-all duration-300">
         <div class="bg-gray-900 border border-gray-800 p-8 rounded-2xl max-w-sm w-full text-center space-y-6 shadow-2xl">
             <h2 class="text-3xl font-bold text-emerald-400">مرحباً بك!</h2>
-            <p class="text-gray-400 text-sm">سيقوم النظام بتوليد اسم مستخدم فريد لك كضيف لحفظ نقاطك وتنافسك مع زملائك.</p>
+            <p class="text-gray-400 text-sm">سيقوم النظام الآن بتوليد اسم مستخدم فريد وخاص بك لحفظ مهاراتك ونقاطك وتحدياتك.</p>
             <button id="guest-enter-btn" class="w-full bg-emerald-500 hover:bg-emerald-600 text-gray-900 font-bold py-3 px-4 rounded-xl transition shadow-lg">
                 🚀 دخول سريع كضيف
             </button>
@@ -20,10 +20,10 @@
     </div>
 
     <header class="bg-gray-800 p-4 flex justify-between items-center shadow-md">
-        <h1 class="text-xl font-bold text-emerald-400 flex items-center gap-2">🏆 منصة التحديات</h1>
+        <h1 class="text-xl font-bold text-emerald-400 flex items-center gap-2">💻 منصة التدريب الذكي</h1>
         
         <div class="flex items-center gap-4">
-            <span id="user-display-name" class="text-sm font-bold text-gray-300 bg-gray-700 px-3 py-1.5 rounded-lg border border-gray-600">جاري التحميل...</span>
+            <span id="user-display-name" class="text-sm font-bold text-gray-300 bg-gray-700 px-3 py-1.5 rounded-lg border border-gray-600">جاري إنشاء الحساب...</span>
             <span id="user-points" class="bg-amber-500 text-gray-900 font-bold px-3 py-1 rounded-full font-mono">⭐ 0</span>
         </div>
 
@@ -40,14 +40,14 @@
     <main class="flex-1 flex flex-col lg:flex-row p-4 gap-4 overflow-hidden">
         
         <div class="w-full lg:w-1/4 flex flex-col gap-4 overflow-y-auto">
-            <div class="bg-gray-850 border border-gray-800 rounded-xl p-4 space-y-3 bg-opacity-40 bg-gray-800">
+            <div class="bg-gray-800/40 border border-gray-800 rounded-xl p-4 space-y-3">
                 <h2 class="text-md font-bold text-emerald-400 border-b border-gray-700 pb-2">🎯 التحديات المتاحة</h2>
                 <div id="challenges-list" class="flex flex-col gap-2"></div>
                 <div id="challenge-desc" class="mt-2 p-3 bg-gray-950 rounded hidden text-xs leading-relaxed text-gray-300"></div>
             </div>
 
-            <div class="bg-gray-850 border border-gray-800 rounded-xl p-4 flex-1 flex flex-col bg-opacity-40 bg-gray-800">
-                <h2 class="text-md font-bold text-amber-400 border-b border-gray-700 pb-2 mb-2">🔥 لوحة صدارة أفضل الطلاب</h2>
+            <div class="bg-gray-800/40 border border-gray-800 rounded-xl p-4 flex-1 flex flex-col">
+                <h2 class="text-md font-bold text-amber-400 border-b border-gray-700 pb-2 mb-2">🔥 لوحة صدارة الطلاب</h2>
                 <ol id="leaderboard-list" class="space-y-2 text-sm overflow-y-auto flex-1 font-mono">
                     </ol>
             </div>
@@ -63,6 +63,6 @@
         </div>
     </main>
 
-    <script type="module" src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
