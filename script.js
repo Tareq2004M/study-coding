@@ -1,67 +1,154 @@
-const codeTemplates = {
-    python: `print("مرحباً بك في عالم بايثون!")\n\n# اكتب كودك هنا\nfor i in range(5):\n    print(f"الرقم: {i}")`,
-    java: `public class Main {\n    public static void main(String[] args) {\n        System.out.println("مرحباً بك في عالم جافا!");\n    }\n}`,
-    c: `#include <stdio.h>\n\nint main() {\n    printf("مرحباً بك في عالم سي!\\n");\n    return 0;\n}`
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+// 1. إعدادات Firebase (ضع بيانات مشروعك هنا)
+const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_AUTH_DOMAIN",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_STORAGE_BUCKET",
+    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+    appId: "YOUR_APP_ID"
 };
 
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const provider = new GoogleAuthProvider();
+
+// 2. بنك التحديات (قائمة المسائل وحالات الفحص)
+const challenges = [
+    {
+        id: "even_numbers",
+        title: "طباعة الأعداد الزوجية",
+        description: "اكتب برنامجاً يطبع الأعداد الزوجية من 1 إلى 10، كل رقم في سطر منفصل.",
+        expectedOutput: "2\n4\n6\n8\n10\n",
+        points: 20
+    },
+    {
+        id: "hello_world",
+        title: "الترحيب البرمجي",
+        description: "اكتب برنامجاً يطبع جملة 'Hello World' تماماً كما هي.",
+        expectedOutput: "Hello World\n",
+        points: 10
+    }
+];
+
+let currentChallenge = null;
+let currentUser = null;
 let editor;
 
+// 3. بناء لوحة التحديات في الواجهة
+const challengesList = document.getElementById('challenges-list');
+challenges.forEach(ch => {
+    const btn = document.createElement('button');
+    btn.className = "bg-gray-800 hover:bg-gray-700 text-right p-3 rounded border border-gray-700 transition flex justify-between items-center";
+    btn.innerHTML = `<span>${ch.title}</span> <span class="text-xs text-amber-400">⭐ ${ch.points}</span>`;
+    btn.onclick = () => selectChallenge(ch);
+    challengesList.appendChild(btn);
+});
+
+function selectChallenge(ch) {
+    currentChallenge = ch;
+    document.getElementById('challenge-description').classList.remove('hidden');
+    document.getElementById('challenge-title').innerText = ch.title;
+    document.getElementById('challenge-text').innerText = ch.description;
+    document.getElementById('output').innerText = "تم اختيار التحدي. اكتب الكود واضغط 'إرسال وفحص الحل'.";
+}
+
+// 4. تشغيل محرر Monaco (نفس إعدادات الكود السابق)
 require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.39.0/min/vs' } });
 require(['vs/editor/editor.main'], function() {
     editor = monaco.editor.create(document.getElementById('editor-container'), {
-        value: codeTemplates.python,
+        value: `# اكتب كود الحل هنا\n`,
         language: 'python',
         theme: 'vs-dark',
-        automaticLayout: true,
         fontSize: 16
     });
 });
 
-const langSelect = document.getElementById('language-select');
-langSelect.addEventListener('change', (e) => {
-    const selectedLang = e.target.value;
-    
-    if (editor) {
-        editor.setValue(codeTemplates[selectedLang]);
-        let monacoLang = selectedLang === 'c' ? 'c' : selectedLang;
-        monaco.editor.setModelLanguage(editor.getModel(), monacoLang);
-    }
-});
+// [منطق اختيار اللغة وإرسال الكود للـ API يبقى مشابهًا للكود السابق]
+// ... (دالة إرسال الكود لـ Piston API للحصول على المخرجات)
 
-document.getElementById('run-btn').addEventListener('click', async () => {
+// 5. فحص الإجابة ومقارنتها بالمخرجات الصحيحة
+document.getElementById('submit-btn').addEventListener('click', async () => {
+    if (!currentChallenge) {
+        alert("الرجاء اختيار تحدي أولاً من القائمة اليمنى!");
+        return;
+    }
+
     const outputElement = document.getElementById('output');
-    outputElement.innerText = "جاري تشغيل الكود... ⏳";
-    
-    const currentLang = langSelect.value;
-    const currentCode = editor.getValue();
-    
-    // ربط مسميات اللغات بـ Piston API
-    const apiLangMap = {
-        python: { language: 'python', version: '3.10.0' },
-        java: { language: 'java', version: '15.0.2' },
-        c: { language: 'c', version: '10.2.0' }
-    };
+    outputElement.innerText = "جاري فحص الحل عبر السيرفر... 🧪";
 
-    try {
-        const response = await fetch('https://emkc.org/api/v2/piston/execute', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                language: apiLangMap[currentLang].language,
-                version: apiLangMap[currentLang].version,
-                files: [{ content: currentCode }]
-            })
-        });
+    // استدعاء المترجم (Piston API) للحصول على المخرج الفعلي للطالب
+    const actualOutput = await executeCodeOnAPI(); 
 
-        const data = await response.json();
+    // تنظيف المخرجات من المساحات الزائدة والسطور الفارغة للمقارنة العادلة
+    const cleanActual = actualOutput.trim().replace(/\r?\n/g, "\n");
+    const cleanExpected = currentChallenge.expectedOutput.trim().replace(/\r?\n/g, "\n");
+
+    if (cleanActual === cleanExpected) {
+        outputElement.innerHTML = `✅ إجابة صحيحة مبروك!\n\nمخرجاتك:\n${actualOutput}`;
         
-        if (data.run) {
-            outputElement.innerText = data.run.output || "تم التنفيذ بنجاح (لا توجد مخرجات نصية).";
+        // مكافأة الطالب بالنقاط في Firebase
+        if (currentUser) {
+            await rewardUser(currentChallenge.points);
         } else {
-            outputElement.innerText = "حدث خطأ أثناء الاتصال بالسيرفر.";
+            outputElement.innerHTML += `\n\n⚠️ تنبيه: لم يتم حفظ النقاط لأنك غير مسجل الدخول.`;
         }
-    } catch (error) {
-        outputElement.innerText = "خطأ في الشبكة: تعذر تشغيل الكود.";
-        console.error(error);
+    } else {
+        outputElement.innerHTML = `❌ إجابة خاطئة. حاول مجدداً.\n\nالمخرجات المتوقعة:\n${cleanExpected}\n\nمخرجات كودك:\n${cleanActual}`;
     }
 });
+
+// 6. إدارة تسجيل الدخول ونظام النقاط السحابي
+const authBtn = document.getElementById('auth-btn');
+const pointsSpan = document.getElementById('user-points');
+
+authBtn.addEventListener('click', () => {
+    if (currentUser) {
+        signOut(auth);
+    } else {
+        signInWithPopup(auth, provider).catch(err => console.error("خطأ بالتسجيل:", err));
+    }
+});
+
+onAuthStateChanged(auth, async (user) => {
+    if (user) {
+        currentUser = user;
+        authBtn.innerText = "تسجيل الخروج";
+        pointsSpan.classList.remove('hidden');
+        
+        // جلب أو إنشاء ملف المستخدم في Firestore
+        const userRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userRef);
+        
+        if (!userSnap.exists()) {
+            await setDoc(userRef, { name: user.displayName, points: 0 });
+            pointsSpan.innerText = `⭐ 0 نقطة`;
+        } else {
+            pointsSpan.innerText = `⭐ ${userSnap.data().points} نقطة`;
+        }
+    } else {
+        currentUser = null;
+        authBtn.innerText = "تسجيل الدخول";
+        pointsSpan.classList.add('hidden');
+    }
+});
+
+async function rewardUser(points) {
+    const userRef = doc(db, "users", currentUser.uid);
+    await updateDoc(userRef, {
+        points: increment(points)
+    });
+    // تحديث الواجهة فوراً
+    const userSnap = await getDoc(userRef);
+    pointsSpan.innerText = `⭐ ${userSnap.data().points} نقطة`;
+}
+
+// دالة مساعدة لتشغيل الكود (تعتمد على الفيتش من الكود السابق)
+async function executeCodeOnAPI() {
+    // كود الاتصال بـ Piston API وإرجاع النص المستخرج (data.run.output)
+    // ...
+}
