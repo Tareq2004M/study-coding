@@ -3,111 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مرحباً بك في منصة البرمجة</title>
+    <title>منصة التحديات البرمجية ولائحة الشرف</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Tajawal', sans-serif; }
-        .code-bg {
-            background: linear-gradient(rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.9)), 
-                        url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80');
-            background-size: cover;
-        }
-        .glass {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.39.0/min/vs/loader.min.js"></script>
 </head>
-<body class="code-bg text-white h-screen flex flex-col justify-center items-center p-6">
+<body class="bg-gray-900 text-white font-sans h-screen flex flex-col overflow-hidden">
 
-    <div class="max-w-4xl w-full text-center space-y-8">
-        
-        <div class="space-y-4">
-            <div class="inline-block p-3 bg-emerald-500/20 rounded-2xl mb-4">
-                <svg class="w-12 h-12 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
-                </svg>
-            </div>
-            <h1 class="text-5xl md:text-6xl font-bold tracking-tight">
-                أتقن البرمجة بـ <span class="text-emerald-400">ذكاء</span>
-            </h1>
-            <p class="text-gray-400 text-xl max-w-2xl mx-auto">
-                منصة تفاعلية لتدريب الطلاب على لغات Python و Java و C. واجه التحديات، اجمع النقاط، وابدأ رحلتك البرمجية اليوم.
-            </p>
-        </div>
-
-        <div class="glass max-w-sm mx-auto p-8 rounded-3xl shadow-2xl space-y-6">
-            <h2 class="text-2xl font-bold">ابدأ التعلم الآن</h2>
-            
-            <div class="space-y-4">
-                <button id="google-login" class="w-full flex items-center justify-center gap-3 bg-white text-gray-900 font-bold py-3 px-4 rounded-xl hover:bg-gray-100 transition duration-300">
-                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5">
-                    الدخول عبر جوجل
-                </button>
-                
-                <div class="relative py-2">
-                    <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-700"></div></div>
-                    <div class="relative flex justify-center text-xs uppercase"><span class="bg-slate-900 px-2 text-gray-500">أو كـ زائر</span></div>
-                </div>
-
-                <a href="index.html" class="block w-full text-center border border-gray-600 text-gray-300 py-3 px-4 rounded-xl hover:bg-white/5 transition">
-                    تجربة المحرر مباشرة
-                </a>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-right">
-            <div class="glass p-4 rounded-2xl">
-                <h3 class="text-emerald-400 font-bold mb-2">🚀 تشغيل مباشر</h3>
-                <p class="text-sm text-gray-400">نفذ كودك في المتصفح دون الحاجة لتثبيت أي برامج.</p>
-            </div>
-            <div class="glass p-4 rounded-2xl">
-                <h3 class="text-emerald-400 font-bold mb-2">🏆 تحديات يومية</h3>
-                <p class="text-sm text-gray-400">مسائل برمجية بمستويات مختلفة لتطوير مهاراتك.</p>
-            </div>
-            <div class="glass p-4 rounded-2xl">
-                <h3 class="text-emerald-400 font-bold mb-2">📊 نظام نقاط</h3>
-                <p class="text-sm text-gray-400">حساب سحابي يحفظ تقدمك ومستواك بين زملائك.</p>
-            </div>
+    <div id="auth-overlay" class="fixed inset-0 bg-slate-950/95 flex justify-center items-center z-50 transition-all duration-300">
+        <div class="bg-gray-900 border border-gray-800 p-8 rounded-2xl max-w-sm w-full text-center space-y-6 shadow-2xl">
+            <h2 class="text-3xl font-bold text-emerald-400">مرحباً بك!</h2>
+            <p class="text-gray-400 text-sm">سيقوم النظام بتوليد اسم مستخدم فريد لك كضيف لحفظ نقاطك وتنافسك مع زملائك.</p>
+            <button id="guest-enter-btn" class="w-full bg-emerald-500 hover:bg-emerald-600 text-gray-900 font-bold py-3 px-4 rounded-xl transition shadow-lg">
+                🚀 دخول سريع كضيف
+            </button>
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    <header class="bg-gray-800 p-4 flex justify-between items-center shadow-md">
+        <h1 class="text-xl font-bold text-emerald-400 flex items-center gap-2">🏆 منصة التحديات</h1>
+        
+        <div class="flex items-center gap-4">
+            <span id="user-display-name" class="text-sm font-bold text-gray-300 bg-gray-700 px-3 py-1.5 rounded-lg border border-gray-600">جاري التحميل...</span>
+            <span id="user-points" class="bg-amber-500 text-gray-900 font-bold px-3 py-1 rounded-full font-mono">⭐ 0</span>
+        </div>
 
-        // إعدادات Firebase الخاصة بك
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_AUTH_DOMAIN",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_STORAGE_BUCKET",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
+        <div class="flex items-center gap-3">
+            <select id="language-select" class="bg-gray-700 text-white p-2 rounded border border-gray-600">
+                <option value="python">Python</option>
+                <option value="java">Java</option>
+                <option value="c">C</option>
+            </select>
+            <button id="submit-btn" class="bg-emerald-500 hover:bg-emerald-600 text-gray-900 font-bold px-6 py-2 rounded transition shadow-lg">إرسال وفحص الحل 🚀</button>
+        </div>
+    </header>
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const provider = new GoogleAuthProvider();
+    <main class="flex-1 flex flex-col lg:flex-row p-4 gap-4 overflow-hidden">
+        
+        <div class="w-full lg:w-1/4 flex flex-col gap-4 overflow-y-auto">
+            <div class="bg-gray-850 border border-gray-800 rounded-xl p-4 space-y-3 bg-opacity-40 bg-gray-800">
+                <h2 class="text-md font-bold text-emerald-400 border-b border-gray-700 pb-2">🎯 التحديات المتاحة</h2>
+                <div id="challenges-list" class="flex flex-col gap-2"></div>
+                <div id="challenge-desc" class="mt-2 p-3 bg-gray-950 rounded hidden text-xs leading-relaxed text-gray-300"></div>
+            </div>
 
-        // منطق تسجيل الدخول
-        document.getElementById('google-login').onclick = () => {
-            signInWithPopup(auth, provider)
-                .then(() => {
-                    window.location.href = 'index.html'; // التوجه للمحرر بعد النجاح
-                })
-                .catch(err => console.error(err));
-        };
+            <div class="bg-gray-850 border border-gray-800 rounded-xl p-4 flex-1 flex flex-col bg-opacity-40 bg-gray-800">
+                <h2 class="text-md font-bold text-amber-400 border-b border-gray-700 pb-2 mb-2">🔥 لوحة صدارة أفضل الطلاب</h2>
+                <ol id="leaderboard-list" class="space-y-2 text-sm overflow-y-auto flex-1 font-mono">
+                    </ol>
+            </div>
+        </div>
 
-        // التحقق إذا كان مسجلاً بالفعل
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                // إذا كان المستخدم مسجلاً، يمكنك توجيهه تلقائياً للمحرر
-                // window.location.href = 'index.html';
-            }
-        });
-    </script>
+        <div class="flex-1 bg-gray-950 rounded-xl overflow-hidden border border-gray-850 flex flex-col">
+            <div id="editor-container" class="flex-1 h-full text-left"></div>
+        </div>
+
+        <div class="w-full lg:w-1/4 bg-gray-950 rounded-xl flex flex-col border border-gray-850 p-4">
+            <h2 class="text-xs text-gray-400 border-b border-gray-800 pb-2 mb-2">شاشة المخرجات والفحص</h2>
+            <pre id="output" class="flex-1 font-mono text-xs text-green-400 overflow-y-auto whitespace-pre-wrap">اختر تحدياً من اليمين وابدأ الحل...</pre>
+        </div>
+    </main>
+
+    <script type="module" src="script.js"></script>
 </body>
 </html>
