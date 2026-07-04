@@ -1,77 +1,72 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, collection, query, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+// بنك المسائل البرمجية وقوالب الحلول لكل لغة
+const challenges = [
+    { id: "hello", title: "مرحبا بالعالم", desc: "اكتب برنامجاً يطبع بدقة الجملة التالية: Hello World", expected: "Hello World\n", points: 10 },
+    { id: "even", title: "الأعداد الزوجية", desc: "اطبع الأعداد الزوجية من 1 إلى 6 بحيث يكون كل رقم في سطر منفصل (2 ثم 4 ثم 6).", expected: "2\n4\n6\n", points: 20 }
+];
 
-const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_AUTH_DOMAIN",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_STORAGE_BUCKET",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID"
+const codeTemplates = {
+    python: `print("اكتب كود الحل هنا")`,
+    java: `public class Main {\n    public static void main(String[] args) {\n        // اكتب كود الحل هنا\n    }\n}`,
+    c: `#include <stdio.h>\n\nint main() {\n    // اكتب كود الحل هنا\n    return 0;\n}`
 };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-
-let currentUser = null;
 let currentChallenge = null;
 let editor;
 
-const challenges = [
-    { id: "even", title: "الأعداد الزوجية", desc: "اطبع الأعداد الزوجية من 1 إلى 6 (كل رقم بسطر).", expected: "2\n4\n6\n", points: 15 },
-    { id: "hello", title: "مرحبا بالعالم", desc: "اطبع الجملة بدقة: Hello World", expected: "Hello World\n", points: 10 }
-];
+// 1. إدارة بيانات المستخدم محلياً (بدون سيرفر وبدون مشاكل)
+function initUser() {
+    let username = localStorage.getItem('guest_username');
+    let points = parseInt(localStorage.getItem('guest_points')) || 0;
+
+    if (!username) {
+        // إظهار شاشة الدخول أول مرة فقط
+        document.getElementById('auth-overlay').classList.remove('opacity-0', 'pointer-events-none');
+    } else {
+        document.getElementById('auth-overlay').style.display = 'none';
+        document.getElementById('user-display-name').innerText = username;
+        document.getElementById('user-points').innerText = `⭐ ${points}`;
+        loadLeaderboard(username, points);
+    }
+}
 
 document.getElementById('guest-enter-btn').onclick = () => {
-    signInAnonymously(auth).then(() => {
-        document.getElementById('auth-overlay').classList.add('opacity-0', 'pointer-events-none');
-    }).catch(err => alert("فشل الدخول كضيف: " + err.message));
+    const randomId = Math.floor(1000 + Math.random() * 9000);
+    const username = `💡 Guest_${randomId}`;
+    localStorage.setItem('guest_username', username);
+    localStorage.setItem('guest_points', 0);
+    
+    document.getElementById('auth-overlay').classList.add('opacity-0', 'pointer-events-none');
+    setTimeout(() => document.getElementById('auth-overlay').style.display = 'none', 300);
+    
+    initUser();
 };
 
-onAuthStateChanged(auth, async (user) => {
-    if (user) {
-        currentUser = user;
-        document.getElementById('auth-overlay').classList.add('opacity-0', 'pointer-events-none');
-        
-        const userRef = doc(db, "users", user.uid);
-        const userSnap = await getDoc(userRef);
-        
-        let username;
-        if (!userSnap.exists()) {
-            const randomId = Math.floor(1000 + Math.random() * 9000);
-            username = `💡 Guest_${randomId}`;
-            
-            await setDoc(userRef, { name: username, points: 0 });
-        } else {
-            username = userSnap.data().name;
-        }
-        
-        document.getElementById('user-display-name').innerText = username;
-        document.getElementById('user-points').innerText = `⭐ ${userSnap.data().points || 0}`;
-        
-        loadLeaderboard();
-    }
-});
+// 2. تحديث لوحة الصدارة المحاكية لتشجيع الطلاب
+function loadLeaderboard(currentName, currentPoints) {
+    // أسماء وهمية لطلاب منافسين لخلق جو تحدي حقيقي
+    let competitors = [
+        { name: "⚡ أحمد_المبرمج", points: 25 },
+        { name: "🚀 سارة_كود", points: 15 },
+        { name: "💻 مبرمج_المستقبل", points: 5 },
+        { name: currentName, points: currentPoints }
+    ];
 
-function loadLeaderboard() {
-    const q = query(collection(db, "users"), orderBy("points", "desc"), limit(10));
-    onSnapshot(q, (snapshot) => {
-        const leaderboardList = document.getElementById('leaderboard-list');
-        leaderboardList.innerHTML = "";
-        let rank = 1;
-        snapshot.forEach((doc) => {
-            const data = doc.data();
-            const li = document.createElement('li');
-            li.className = `flex justify-between p-2 rounded ${doc.id === currentUser?.uid ? 'bg-emerald-500/20 border border-emerald-500/40 font-bold' : 'bg-gray-900/40'}`;
-            li.innerHTML = `<span>#${rank} ${data.name}</span> <span class="text-amber-400">${data.points} نقطة</span>`;
-            leaderboardList.appendChild(li);
-            rank++;
-        });
+    // ترتيب الطلاب حسب النقاط من الأعلى للأقل
+    competitors.sort((a, b) => b.points - a.points);
+
+    const listElement = document.getElementById('leaderboard-list');
+    listElement.innerHTML = "";
+    
+    competitors.forEach((student, index) => {
+        const li = document.createElement('li');
+        const isMe = student.name === currentName;
+        li.className = `flex justify-between p-2 rounded text-xs ${isMe ? 'bg-emerald-500/20 border border-emerald-500/40 font-bold' : 'bg-gray-900/40'}`;
+        li.innerHTML = `<span>#${index + 1} ${student.name} ${isMe ? '(أنت)' : ''}</span> <span class="text-amber-400">${student.points} نقطة</span>`;
+        listElement.appendChild(li);
     });
 }
 
+// 3. بناء قائمة التحديات في الواجهة
 const challengesList = document.getElementById('challenges-list');
 challenges.forEach(ch => {
     const btn = document.createElement('button');
@@ -86,10 +81,11 @@ challenges.forEach(ch => {
     challengesList.appendChild(btn);
 });
 
+// 4. تشغيل محرر الأكواد Monaco ذي الواجهة الجذابة
 require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.39.0/min/vs' } });
 require(['vs/editor/editor.main'], function() {
     editor = monaco.editor.create(document.getElementById('editor-container'), {
-        value: `# اكتب كود الحل هنا\n`,
+        value: codeTemplates.python,
         language: 'python',
         theme: 'vs-dark',
         fontSize: 14,
@@ -97,10 +93,20 @@ require(['vs/editor/editor.main'], function() {
     });
 });
 
+// تغيير قالب الكود عند تغيير اللغة المحددة
+document.getElementById('language-select').onchange = (e) => {
+    const lang = e.target.value;
+    if (editor) {
+        editor.setValue(codeTemplates[lang]);
+        monaco.editor.setModelLanguage(editor.getModel(), lang);
+    }
+};
+
+// 5. فحص الحل الذكي وحفظ النقاط محلياً فوراً
 document.getElementById('submit-btn').onclick = async () => {
-    if (!currentChallenge) return alert("اختر مسألة أولاً!");
+    if (!currentChallenge) return alert("الرجاء اختيار مسألة من القائمة أولاً!");
     const outputBox = document.getElementById('output');
-    outputBox.innerText = "جاري الفحص والمطابقة البرمجية... 🧪";
+    outputBox.innerText = "جاري تشغيل الكود وفحصه... 🧪";
 
     try {
         const response = await fetch('https://emkc.org/api/v2/piston/execute', {
@@ -113,20 +119,28 @@ document.getElementById('submit-btn').onclick = async () => {
             })
         });
         const data = await response.json();
-        const studentOutput = data.run.output;
+        const studentOutput = data.run.output || "";
 
+        // فحص ومطابقة المخرجات بشكل صحيح
         if (studentOutput.trim().replace(/\r/g, "") === currentChallenge.expected.trim().replace(/\r/g, "")) {
-            outputBox.innerText = `✅ رائع! الكود صحيح ومطابق للمخرجات تماماً.\n\nمخرجاتك:\n${studentOutput}`;
+            outputBox.innerText = `✅ ممتاز! الحل صحيح ومطابق تماماً.\n\nمخرجات كودك:\n${studentOutput}`;
             
-            const userRef = doc(db, "users", currentUser.uid);
-            await updateDoc(userRef, { points: increment(currentChallenge.points) });
+            // إضافة نقاط الطالب محلياً
+            let currentPoints = parseInt(localStorage.getItem('guest_points')) || 0;
+            currentPoints += currentChallenge.points;
+            localStorage.setItem('guest_points', currentPoints);
             
-            const freshSnap = await getDoc(userRef);
-            document.getElementById('user-points').innerText = `⭐ ${freshSnap.data().points}`;
+            // تحديث الواجهة فوراً
+            const username = localStorage.getItem('guest_username');
+            document.getElementById('user-points').innerText = `⭐ ${currentPoints}`;
+            loadLeaderboard(username, currentPoints);
         } else {
-            outputBox.innerText = `❌ المخرجات غير متطابقة.\n\nالمطلوب:\n${currentChallenge.expected}\n\nكودك أخرج:\n${studentOutput}`;
+            outputBox.innerText = `❌ المخرجات غير متطابقة، حاول مرة أخرى.\n\nالمخرجات المتوقعة:\n${currentChallenge.expected}\n\nمخرجات كودك:\n${studentOutput || "[لا توجد مخرجات نصية - تحقق من وجود أمر الطباعة]"}`;
         }
     } catch (err) {
-        outputBox.innerText = "خطأ في الاتصال بسيرفر الفحص الذكي.";
+        outputBox.innerText = "حدث خطأ في الاتصال بسيرفر الفحص.";
     }
 };
+
+// تشغيل النظام عند فتح الصفحة
+initUser();
